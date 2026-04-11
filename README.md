@@ -262,10 +262,10 @@ echo '{"bg": "description of scene after object is removed"}' \
 
 ### Step 2 — Generate masks (SAM2 + Gemini)
 
-Launch the point selector GUI to mark the object to remove:
+Launch the point selector GUI to mark the object to remove. The GUI will open in Ubuntu or through the VNC tool in your remote device browser. Create and load a JSON, click on the object(s) to remove, then save the result:
 
 ```bash
-export DISPLAY=:1   # if running over SSH via noVNC
+export DISPLAY=:1   # if running over SSH via noVNC or simply run the below python command if on the Nano
 python VLM-MASK-REASONER/point_selector_gui.py
 ```
 
@@ -288,6 +288,7 @@ python inference/cogvideox_fun/predict_v2v.py \
     --config.video_model.model_name="./CogVideoX-Fun-V1.5-5b-InP" \
     --config.video_model.transformer_path="./void_pass1.safetensors"
 ```
+Ensure to update config paths and file names.
 
 ---
 
@@ -305,7 +306,7 @@ python inference/cogvideox_fun/predict_v2v.py \
 
 ## Troubleshooting
 
-For detailed step-by-step resolution of all known issues — including CUDA errors, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors — see:
+For detailed step-by-step resolution of known issues — including CUDA errors, crash and reboot protocols, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors — see:
 
 **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
