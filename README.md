@@ -243,7 +243,7 @@ python inference/cogvideox_fun/predict_v2v.py \
     --config.video_model.transformer_path="./void_pass1.safetensors"
 ```
 
-Output: `./outputs/lime.mp4` — Side-by-side comparison: `./outputs/lime_tuple.mp4`
+Output: `./outputs/lime-fg=-1-0001.mp4` — Side-by-side comparison: `./outputs/lime-fg=-1-0001_tuple.mp4`
 
 > **ZGX Nano tip:** Add `--config.system.gpu_memory_mode=model_full_load` to use the full 128 GB unified memory for best performance.
 
