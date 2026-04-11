@@ -9,11 +9,14 @@
 ---
 
 ## Preview
-
+![Netflix VOID lime sample on HP ZGX Nano companion device](assets/VOID_obj_removal_lime_sample.png)
+<details>
+<summary>Show table</summary>
 | Before | After |
 |:------:|:-----:|
 | ![Before — input video](assets/preview_before.gif) | ![After — VOID output](assets/preview_after.gif) |
 | `input_video.mp4` | `output.mp4` |
+</details>
 
 ---
 
