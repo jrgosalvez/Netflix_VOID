@@ -5,12 +5,6 @@ Source: [huggingface.co/netflix/void-model](https://huggingface.co/netflix/void-
 
 ---
 
-## Who this Guide is For
-
-This guide was written to help Media and Entertainment video enditing professionals looking to use Netflix's open source VOID model to remove objects from videos. 
-
----
-
 ## Hardware
 
 | Component | Spec |
@@ -359,7 +353,15 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ## 10 — Set Gemini API Key (for mask generation)
 
-Required only if using the VLM-MASK-REASONER pipeline (Stage 1 of mask creation).
+Required only if using the VLM-MASK-REASONER pipeline (Stage 2 — VLM analysis).
+
+> **Important — Gemini model and billing:** Stage 2 uses `gemini-3.1-pro` by default.
+> This model is **gated behind a paid Google AI Studio plan** — the free tier has
+> `limit: 0` and will immediately return a `429 RESOURCE_EXHAUSTED` error regardless
+> of your API key. Before running the pipeline, either:
+>
+> - **Enable billing** on your Google AI Studio account at [aistudio.google.com](https://aistudio.google.com) and monitor usage at [ai.dev/rate-limit](https://ai.dev/rate-limit), or
+> - **Swap the model** in `stage2_vlm_analysis.py` to a free or self-hosted alternative (see options below)
 
 **Create a Gemini API key:**
 
@@ -377,6 +379,35 @@ echo 'export GEMINI_API_KEY=your_key_here' >> ~/.bashrc
 source ~/.bashrc
 ```
 
+**Check and change the default model in `stage2_vlm_analysis.py`:**
+
+```bash
+# Find where the model is set
+grep -n "gemini-3\|model_name\|MODEL" VLM-MASK-REASONER/stage2_vlm_analysis.py | head -20
+```
+
+Free-tier and alternative model options to substitute:
+
+| Option | Model string | Notes |
+|--------|-------------|-------|
+| Gemini free tier | `gemini-1.5-flash` | Free tier supported, lower capability |
+| Gemini free tier | `gemini-2.0-flash` | Free tier supported, faster |
+| Local / open source | `ollama/llava` | Run via [Ollama](https://ollama.com) locally on the ZGX Nano — no API key needed |
+| Custom OpenAI-compatible | any | `stage2_vlm_analysis.py` uses the OpenAI client — point `base_url` to any compatible endpoint |
+
+To use a local Ollama model instead of Gemini:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull a vision-capable model
+ollama pull llava
+
+# Ollama serves an OpenAI-compatible API at localhost:11434
+# Update stage2_vlm_analysis.py base_url and model accordingly
+```
+
 **How mask `.mp4` files are created:**
 
 The VLM-MASK-REASONER pipeline generates `quadmask_0.mp4` automatically in four stages:
@@ -392,7 +423,7 @@ The VLM-MASK-REASONER pipeline generates `quadmask_0.mp4` automatically in four 
 Run all stages after the GUI step with a single command:
 
 ```bash
-bash VLM-MASK-REASONER/run_pipeline.sh my_config_points.json --device cuda
+bash VLM-MASK-REASONER/run_pipeline.sh VLM-MASK-REASONER/mask_config_points.json
 ```
 
 ---
