@@ -18,6 +18,7 @@ Detailed step-by-step resolution for all known issues when running Netflix VOID 
 - [VLM-MASK-REASONER — Point Selector GUI How-To](#vlm-mask-reasoner--point-selector-gui-how-to)
 - [VLM-MASK-REASONER — Common Pipeline Errors](#vlm-mask-reasoner--common-pipeline-errors)
 - [Post-Crash / Post-Reboot — NVIDIA Driver Lost After Kernel Update](#post-crash--post-reboot--nvidia-driver-lost-after-kernel-update)
+- [Gated Model Access — 403 Forbidden](#gated-model-access--403-forbidden)
 - [General Error Reference](#general-error-reference)
 
 ---
@@ -465,6 +466,7 @@ Re-open the GUI, load the same video, adjust points, and save. The file is overw
 | `ModuleNotFoundError: No module named 'tkinter'` | System package missing | `sudo apt install python3-tk -y` |
 | `❌ Checkpoint not found: ../sam2_hiera_large.pt` | Checkpoint in wrong location | `wget https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt -O ../sam2_hiera_large.pt` |
 | `FileNotFoundError: bpe_simple_vocab_16e6.txt.gz` | SAM3 missing BPE vocab file | See [SAM3 BPE Vocabulary File Missing](#sam3-bpe-vocabulary-file-missing) |
+| `GatedRepoError: 403 Client Error — facebook/sam3` | HF access not granted | Visit [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3), request access, wait for approval, then re-run. See [Gated Model Access](#gated-model-access--403-forbidden) |
 | `UserWarning: cannot import name '_C' from 'sam2'` | SAM2 C extension not compiled | Safe to ignore — segmentation still works |
 | `429 RESOURCE_EXHAUSTED` (Gemini) | Free tier quota or paid model | See [Gemini API & Model Options](#gemini-api--model-options) |
 | Stage 2 Gemini key error | `GEMINI_API_KEY` not set | `echo $GEMINI_API_KEY` — if blank, re-export and `source ~/.bashrc` |
@@ -527,6 +529,62 @@ http://192.168.1.47   # replace with your ZGX Nano's IP
 ```
 
 The dashboard shows system health, driver version, and supports triggering driver updates and restarts without SSH. Verify the GPU is detected and the driver is active before returning to the SSH workflow above.
+
+---
+
+## Gated Model Access — 403 Forbidden
+
+### Error
+
+```
+huggingface_hub.errors.GatedRepoError: 403 Client Error.
+Cannot access gated repo for url https://huggingface.co/facebook/sam3/resolve/main/config.json.
+Access to model facebook/sam3 is restricted and you are not in the authorized list.
+```
+
+### Cause
+
+`facebook/sam3` (used in Stage 3 grey mask generation) and `alibaba-pai/CogVideoX-Fun-V1.5-5b-InP` (the base inpainting model) are **gated repositories** on Hugging Face. Even with a valid HF token, downloads return `403 Forbidden` until you have manually requested and been granted access on the model's page.
+
+### Step 1 — Request access for each gated model
+
+Visit each URL below while logged in to your Hugging Face account, click **Agree and access repository**, and complete the access form:
+
+- **SAM3:** [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3)
+- **CogVideoX-Fun:** [huggingface.co/alibaba-pai/CogVideoX-Fun-V1.5-5b-InP](https://huggingface.co/alibaba-pai/CogVideoX-Fun-V1.5-5b-InP)
+
+Approval is typically granted within minutes to a few hours. You will receive a Hugging Face notification when access is granted.
+
+### Step 2 — Confirm your HF token is set
+
+```bash
+echo $HF_TOKEN   # must be non-empty
+
+# If empty, re-authenticate:
+hf auth login
+```
+
+### Step 3 — Verify access before re-running
+
+```bash
+# Test SAM3 access
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download('facebook/sam3', 'config.json'); print('SAM3 access OK')"
+
+# Test CogVideoX access
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download('alibaba-pai/CogVideoX-Fun-V1.5-5b-InP', 'config.json'); print('CogVideoX access OK')"
+```
+
+Both should print `OK`. If either raises `GatedRepoError`, access has not yet been granted — wait and retry.
+
+### Step 4 — Re-run the pipeline
+
+Once both models are accessible, re-run from `void-model/`:
+
+```bash
+bash VLM-MASK-REASONER/run_pipeline.sh VLM-MASK-REASONER/mask_config_points.json     --sam2-checkpoint /home/zgx-prod-2/Desktop/NetflixVOID/sam2_hiera_large.pt     --device cuda
+```
+
+> Stages 1 and 2 will re-run but complete quickly. Stage 3 will now load SAM3 successfully.
 
 ---
 

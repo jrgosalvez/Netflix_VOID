@@ -148,6 +148,19 @@ hf auth login
 
 > Generate a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens). See [TROUBLESHOOTING.md → HF Token](TROUBLESHOOTING.md#hugging-face-authentication) for persistence.
 
+### 7a — Request Access to Gated Models
+
+Two models used in this pipeline require manual access approval on Hugging Face before they can be downloaded. Request access **before** running the pipeline — approval can take minutes to hours.
+
+| Model | URL | Required for |
+|-------|-----|-------------|
+| `facebook/sam3` | [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3) | Stage 3 grey mask generation |
+| `alibaba-pai/CogVideoX-Fun-V1.5-5b-InP` | [huggingface.co/alibaba-pai/CogVideoX-Fun-V1.5-5b-InP](https://huggingface.co/alibaba-pai/CogVideoX-Fun-V1.5-5b-InP) | Base inpainting model |
+
+For each: visit the link → click **Agree and access repository** → submit the form. Once approved, your authenticated HF token will unlock the download automatically.
+
+> See [TROUBLESHOOTING.md → Gated Model Access](TROUBLESHOOTING.md#gated-model-access--403-forbidden) for details on verifying access and re-running after approval.
+
 ### 8 — Download Models
 
 ```bash
