@@ -176,7 +176,7 @@ huggingface-cli download netflix/void-model --local-dir .
 
 ### 9 — Set Gemini API Key
 
-Required to create custom videos for the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default — **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
+Required to create custom videos with the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default — **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
 
 - Enable billing at [aistudio.google.com](https://aistudio.google.com), or
 - Swap the model for a free alternative — see [TROUBLESHOOTING.md → Gemini Model Options](TROUBLESHOOTING.md#gemini-api--model-options)
