@@ -17,6 +17,7 @@ Detailed step-by-step resolution for all known issues when running Netflix VOID 
 - [VLM-MASK-REASONER — GUI Access](#vlm-mask-reasoner--gui-access)
 - [VLM-MASK-REASONER — Point Selector GUI How-To](#vlm-mask-reasoner--point-selector-gui-how-to)
 - [VLM-MASK-REASONER — Common Pipeline Errors](#vlm-mask-reasoner--common-pipeline-errors)
+- [Stage 3 — Manual Mask Refinement Tips](#stage-3--manual-mask-refinement-tips)
 - [Post-Crash / Post-Reboot — NVIDIA Driver Lost After Kernel Update](#post-crash--post-reboot--nvidia-driver-lost-after-kernel-update)
 - [Gated Model Access — 403 Forbidden](#gated-model-access--403-forbidden)
 - [General Error Reference](#general-error-reference)
@@ -387,7 +388,7 @@ source ~/void-env/bin/activate
 python VLM-MASK-REASONER/point_selector_gui.py &
 ```
 
-Open in browser: `http://192.168.1.47:6080/vnc.html` → click **Connect**.
+Open in browser: `http://<your-ssh-ip-address>:6080/vnc.html` → click **Connect**.
 
 To stop everything when done:
 
@@ -484,6 +485,73 @@ python -c "import cv2; print('opencv       OK')"
 python -c "import PIL; print('Pillow       OK')"
 python -c "import sam2; print('SAM2         OK')"
 ```
+
+---
+
+## Stage 3 — Manual Mask Refinement Tips
+
+After the VLM pipeline completes Stage 1 (SAM2 segmentation) and Stage 2 (Gemini VLM analysis), Stage 3 generates the grey mask (`grey_mask.mp4`) that encodes interaction-affected regions. If Stage 3 produces inaccurate results — or you want to manually control the affected region — use the built-in quadmask editor before running inference.
+
+### When to use manual refinement
+
+- The auto-generated grey mask is too large, too small, or covers the wrong area
+- The VLM incorrectly identified affected objects (or missed them)
+- You want to skip Stage 2 (Gemini) entirely and define the affected region yourself
+- You want to preview and adjust the mask before committing to a full inference run (~6 min)
+
+### Launch the quadmask editor
+
+From inside `void-model/`:
+
+```bash
+export DISPLAY=:1   # if running via noVNC
+python VLM-MASK-REASONER/edit_quadmask.py
+```
+
+Open your video folder (`sample/my-video/`) containing `input_video.mp4` and `quadmask_0.mp4`. The editor shows the original video and the editable mask side by side.
+
+### Quadmask value reference
+
+| Pixel value | Meaning |
+|-------------|---------|
+| `0` | Primary object — **remove** |
+| `63` | Overlap of primary + affected regions |
+| `127` | Affected region — objects that move/fall as a result (e.g. shadow, displaced item) |
+| `255` | Background — **keep** |
+
+### Editor tools
+
+| Tool | Action |
+|------|--------|
+| **Grid Toggle** | Click a grid cell to toggle between affected (`127`) and keep (`255`) |
+| **Grid Black Toggle** | Click a grid cell to toggle between remove (`0`) and keep (`255`) |
+| **Brush — Add** | Freehand paint mask regions at pixel level |
+| **Brush — Erase** | Erase painted regions |
+| **Copy from Previous Frame** | Propagate the black or grey mask from the previous frame |
+
+**Keyboard shortcuts:** `←` / `→` to navigate frames · `Ctrl+Z` / `Ctrl+Y` to undo/redo
+
+### Saving and re-running
+
+Save in the editor — it overwrites `quadmask_0.mp4` in place. Then re-run inference from Pass 1:
+
+```bash
+python inference/cogvideox_fun/predict_v2v.py \
+    --config config/quadmask_cogvideox.py \
+    --config.data.data_rootdir="./sample" \
+    --config.experiment.run_seqs="my-video" \
+    --config.experiment.save_path="./outputs" \
+    --config.video_model.model_name="./CogVideoX-Fun-V1.5-5b-InP" \
+    --config.video_model.transformer_path="./void_pass1.safetensors"
+```
+
+### Tips for better mask results
+
+- **Spread points across frames** — in the point selector GUI, mark the object in at least 10–15 frames evenly spaced across the video for reliable SAM2 tracking
+- **Use negative points** — right-click background areas that look similar to the object to prevent mask bleed
+- **Grey region sizing** — keep the affected/grey region (`127`) tight around physically interacting objects only; overly large grey regions increase inference artifacts
+- **Check frame 0** — the first frame mask quality strongly influences propagation across the rest of the video; refine frame 0 first if results are poor
+- **Skip Stage 2 if no interaction effects** — if the object has no physical interaction with the scene (no shadow, no displaced objects), set the entire mask to black (`0`) for the object and white (`255`) for everything else and skip Gemini entirely
 
 ---
 

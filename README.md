@@ -6,17 +6,18 @@
 [![Paper](https://img.shields.io/badge/arXiv-2604.02296-red)](https://arxiv.org/abs/2604.02296)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/netflix/void-model/blob/main/LICENSE)
 
+> **Credit:** This guide is based on the official Netflix VOID model repository.  
+> Source code, model weights, and original documentation: [github.com/Netflix/void-model](https://github.com/Netflix/void-model)  
+> All credit for the VOID model, architecture, and pipeline belongs to the authors at Netflix and INSAIT.
+
 ---
 
 ## Preview
-![Netflix VOID lime sample on HP ZGX Nano companion device](VOID_obj_removal_lime_sample.png)
-<details>
-<summary>Show table</summary>
+
 | Before | After |
 |:------:|:-----:|
 | ![Before — input video](assets/preview_before.gif) | ![After — VOID output](assets/preview_after.gif) |
 | `input_video.mp4` | `output.mp4` |
-</details>
 
 ---
 
@@ -179,7 +180,7 @@ huggingface-cli download netflix/void-model --local-dir .
 
 ### 9 — Set Gemini API Key
 
-Required to create custom videos with the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default — **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
+Required for the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default — **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
 
 - Enable billing at [aistudio.google.com](https://aistudio.google.com), or
 - Swap the model for a free alternative — see [TROUBLESHOOTING.md → Gemini Model Options](TROUBLESHOOTING.md#gemini-api--model-options)
@@ -246,7 +247,7 @@ python inference/cogvideox_fun/predict_v2v.py \
     --config.video_model.transformer_path="./void_pass1.safetensors"
 ```
 
-Output: `./outputs/lime-fg=-1-0001.mp4` — Side-by-side comparison: `./outputs/lime-fg=-1-0001_tuple.mp4`
+Output: `./outputs/lime.mp4` — Side-by-side comparison: `./outputs/lime_tuple.mp4`
 
 > **ZGX Nano tip:** Add `--config.system.gpu_memory_mode=model_full_load` to use the full 128 GB unified memory for best performance.
 
@@ -256,28 +257,84 @@ Output: `./outputs/lime-fg=-1-0001.mp4` — Side-by-side comparison: `./outputs/
 
 ### Step 1 — Set up your video folder
 
+Create a new folder inside `sample/` named after your project and add the required files:
+
 ```bash
 mkdir -p ~/void-model/sample/my-video
 cp /path/to/your/video.mp4 ~/void-model/sample/my-video/input_video.mp4
+```
+
+Your folder must contain these three files before running the pipeline:
+
+```
+sample/
+└── my-video/
+    ├── input_video.mp4          # your source video
+    ├── mask_config_points.json  # point config saved by the GUI (see Step 2)
+    └── prompt.json              # background description after removal
+```
+
+Create `prompt.json` — edit the description to match what the scene should look like after the object is removed:
+
+```bash
 echo '{"bg": "description of scene after object is removed"}' \
     > ~/void-model/sample/my-video/prompt.json
 ```
 
-### Step 2 — Generate masks (SAM2 + Gemini)
+Example `prompt.json`:
+```json
+{"bg": "An empty football sideline with grass and crowd in background."}
+```
 
-Launch the point selector GUI to mark the object to remove. The GUI will open in Ubuntu or through the VNC tool in your remote device browser. Create and load a JSON, click on the object(s) to remove, then save the result:
+> Update both `mask_config_points.json` and `prompt.json` to match your folder name and file paths before running the pipeline. Path references inside `mask_config_points.json` must point to `sample/my-video/input_video.mp4` and `output_dir` must be `sample/my-video`.
+
+---
+
+### Step 2 — Step 0: Select points (GUI) and generate mask config
+
+Before running the pipeline, use the point selector GUI to mark the object to remove across video frames. The GUI saves `mask_config_points.json` to `VLM-MASK-REASONER/` — you then copy it into your video folder.
+
+**Launch the GUI:**
 
 ```bash
-export DISPLAY=:1   # if running over SSH via noVNC or simply run the below python command if on the Nano
+export DISPLAY=:1   # if running over SSH via noVNC
 python VLM-MASK-REASONER/point_selector_gui.py
 ```
 
 > For GUI access over SSH, see [TROUBLESHOOTING.md → VNC Browser GUI](TROUBLESHOOTING.md#browser-based-gui-via-novnc-recommended-for-ssh-users).
 
-Run the full mask pipeline:
+In the GUI: load your video, click points on the object across multiple frames, add a removal instruction, then save.
+
+**Copy the saved config into your video folder and update paths:**
 
 ```bash
-bash VLM-MASK-REASONER/run_pipeline.sh VLM-MASK-REASONER/mask_config_points.json
+cp VLM-MASK-REASONER/mask_config_points.json sample/my-video/mask_config_points.json
+```
+
+Open `sample/my-video/mask_config_points.json` and confirm the paths match your folder:
+
+```json
+{
+  "videos": [
+    {
+      "video_path": "sample/my-video/input_video.mp4",
+      "output_dir": "sample/my-video",
+      "instruction": "remove the object from the scene",
+      "points": {
+        "0":  {"positive": [[x, y], [x, y]], "negative": [], "box": [x1, y1, x2, y2]},
+        "10": {"positive": [[x, y], [x, y]], "negative": [], "box": [x1, y1, x2, y2]}
+      }
+    }
+  ]
+}
+```
+
+> Update `video_path` and `output_dir` to match your folder name if different from `my-video`. Update `instruction` to describe what to remove.
+
+**Run the full mask pipeline:**
+
+```bash
+bash VLM-MASK-REASONER/run_pipeline.sh /void-model/sample/my-video/mask_config_points.json
 ```
 
 ### Step 3 — Run inference
@@ -291,7 +348,6 @@ python inference/cogvideox_fun/predict_v2v.py \
     --config.video_model.model_name="./CogVideoX-Fun-V1.5-5b-InP" \
     --config.video_model.transformer_path="./void_pass1.safetensors"
 ```
-Ensure to update config paths and file names.
 
 ---
 
@@ -309,7 +365,7 @@ Ensure to update config paths and file names.
 
 ## Troubleshooting
 
-For detailed step-by-step resolution of known issues — including CUDA errors, crash and reboot protocols, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors — see:
+For detailed step-by-step resolution of all known issues — including CUDA errors, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors — see:
 
 **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
