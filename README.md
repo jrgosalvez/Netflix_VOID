@@ -23,7 +23,7 @@
 
 ## Who This Guide is For
 
-This guide was written for Media and Entertainment video content creators looking to use the HP ZGX Nano to edit objects in videos and produce production quality outputs.
+This guide was written for Media and Entertainment video content creators looking to use the HP ZGX Nano as an SSH remote GPU device with HP ZGX Toolkit to edit objects in videos and produce production quality outputs.
 
 ---
 
