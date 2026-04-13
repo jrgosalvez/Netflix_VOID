@@ -328,7 +328,7 @@ python VLM-MASK-REASONER/point_selector_gui.py
 
 > For GUI access over SSH, see [TROUBLESHOOTING.md → VNC Browser GUI](TROUBLESHOOTING.md#browser-based-gui-via-novnc-recommended-for-ssh-users).
 
-In the GUI: load `sample/my-video/input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save** — the GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
+In the GUI: load `sample/my-video/mask_config_points.json` with will load your `input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save** — the GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
 
 After saving, verify the config looks correct:
 
