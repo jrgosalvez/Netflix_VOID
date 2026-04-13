@@ -6,8 +6,6 @@
 [![Paper](https://img.shields.io/badge/arXiv-2604.02296-red)](https://arxiv.org/abs/2604.02296)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/netflix/void-model/blob/main/LICENSE)
 
-<small>**Credit:** This guide is based on the official Netflix VOID model repository [github.com/Netflix/void-model](https://github.com/Netflix/void-model) for use with ZGX Nano companion GPU. </small>
-
 ---
 
 ## Preview
@@ -21,7 +19,7 @@
 
 ## Who This Guide is For
 
-This guide was written for Media and Entertainment video content creators looking to use the HP ZGX Nano as an SSH remote GPU device with HP ZGX Toolkit to edit objects in videos and produce production quality outputs.
+This guide was written for Media and Entertainment video content creators looking to use the HP ZGX Nano as an SSH remote GPU device with HP ZGX Toolkit to edit objects in videos and produce production quality outputs. The guide is based on the official Netflix VOID model repository documentation [github.com/Netflix/void-model](https://github.com/Netflix/void-model) applied for use with ZGX Nano GPU companion device.
 
 ---
 
