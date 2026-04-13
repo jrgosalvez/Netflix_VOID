@@ -16,7 +16,7 @@
 
 | Before | After |
 |:------:|:-----:|
-| ![Before — input video](assets/preview_before.gif) | ![After — VOID output](assets/preview_after.gif) |
+| ![Before — input_video](input_video.gif) | ![After — VOID output](output_video.gif) |
 | `input_video.mp4` | `output.mp4` |
 
 ---
