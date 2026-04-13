@@ -6,7 +6,7 @@
 [![Paper](https://img.shields.io/badge/arXiv-2604.02296-red)](https://arxiv.org/abs/2604.02296)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/netflix/void-model/blob/main/LICENSE)
 
-> **Credit:** This guide is based on the official Netflix VOID model repository [github.com/Netflix/void-model](https://github.com/Netflix/void-model) for use with ZGX Nano companion GPU. 
+> <small>**Credit:** This guide is based on the official Netflix VOID model repository [github.com/Netflix/void-model](https://github.com/Netflix/void-model) for use with ZGX Nano companion GPU. </small>
 
 ---
 
@@ -383,7 +383,7 @@ python inference/cogvideox_fun/predict_v2v.py \
 
 ## Troubleshooting
 
-For detailed step-by-resolution of all known issues. including CUDA errors, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors. see:
+For details and step-by-resolutions of known issues, including CUDA errors, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary errors. see:
 
 **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
