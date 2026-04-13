@@ -50,7 +50,12 @@ echo "GEMINI_API_KEY: $GEMINI_API_KEY"
 
 # 7. Navigate to working directory
 cd ~/Desktop/NetflixVOID/void-model
+
+# 8. Clear GPU memory buffers before starting (recommended before every run)
+python -c "import torch; torch.cuda.empty_cache(); torch.cuda.synchronize(); print('GPU memory cleared')"
 ```
+
+> **Tip — clear GPU memory before every inference or pipeline run.** The ZGX Nano uses unified 128 GB memory shared between CPU and GPU. Cached allocations from previous processes, pipeline stages, or interrupted runs can fragment available memory and cause unexpected errors even when `nvidia-smi` shows capacity available. Run step 8 above before starting any new job. Use `nvidia-smi` before and after to confirm memory is freed.
 
 Expected state: `nvidia-smi` shows `Driver Version: 580.x / CUDA Version: 13.0`, PyTorch prints `CUDA: True / GPU: NVIDIA GB10`, both tokens are non-empty.
 
@@ -413,7 +418,7 @@ The `point_selector_gui.py` Tkinter tool marks the object to remove across video
 3. **Click positive points** — left-click on the object to remove across at least 5–10 frames for reliable tracking
 4. **Click negative points if needed** — right-click areas the mask should NOT include (background the model might confuse with the object)
 5. **Set the instruction** — type a short removal description, e.g. `"remove the sideline referee with the flag"`
-6. **Save** — click **Save**. The config is written to `VLM-MASK-REASONER/mask_config_points.json`
+6. **Save** — click **Save**. The config is written to `sample/my-video/mask_config_points.json`
 
 ### Where the config is saved
 
@@ -429,7 +434,7 @@ Always run from inside `void-model/`:
 
 ```bash
 cd ~/Desktop/NetflixVOID/void-model
-bash VLM-MASK-REASONER/run_pipeline.sh VLM-MASK-REASONER/mask_config_points.json
+bash VLM-MASK-REASONER/run_pipeline.sh sample/my-video/mask_config_points.json
 ```
 
 > Passing just `my_config_points.json` causes `FileNotFoundError` — the script looks for it relative to `void-model/`, not inside `VLM-MASK-REASONER/`.
@@ -462,7 +467,7 @@ Re-open the GUI, load the same video, adjust points, and save. The file is overw
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `FileNotFoundError: my_config_points.json` | Config path not relative to `void-model/` | Pass `VLM-MASK-REASONER/mask_config_points.json` |
+| `FileNotFoundError: my_config_points.json` | Config path not relative to `void-model/` | Pass `sample/my-video/mask_config_points.json` |
 | `ModuleNotFoundError: No module named 'openai'` | `openai` not installed | `pip install openai` |
 | `ModuleNotFoundError: No module named 'tkinter'` | System package missing | `sudo apt install python3-tk -y` |
 | `❌ Checkpoint not found: ../sam2_hiera_large.pt` | Checkpoint in wrong location | `wget https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt -O ../sam2_hiera_large.pt` |
@@ -593,7 +598,7 @@ Expected: `nvidia-smi` shows `Driver Version: 580.x / CUDA Version: 13.0`, PyTor
 Connect directly using a KVM switch or open the HP ZGX / DGX Dashboard from a browser on the same network:
 
 ```
-http://192.168.1.47   # replace with your ZGX Nano's IP
+http://<YOUR_IP>   # replace with your ZGX Nano's IP
 ```
 
 The dashboard shows system health, driver version, and supports triggering driver updates and restarts without SSH. Verify the GPU is detected and the driver is active before returning to the SSH workflow above.
@@ -649,7 +654,9 @@ Both should print `OK`. If either raises `GatedRepoError`, access has not yet be
 Once both models are accessible, re-run from `void-model/`:
 
 ```bash
-bash VLM-MASK-REASONER/run_pipeline.sh VLM-MASK-REASONER/mask_config_points.json     --sam2-checkpoint /home/zgx-prod-2/Desktop/NetflixVOID/sam2_hiera_large.pt     --device cuda
+bash VLM-MASK-REASONER/run_pipeline.sh sample/my-video/mask_config_points.json \
+    --sam2-checkpoint /home/zgx-prod-2/Desktop/NetflixVOID/sam2_hiera_large.pt \
+    --device cuda
 ```
 
 > Stages 1 and 2 will re-run but complete quickly. Stage 3 will now load SAM3 successfully.

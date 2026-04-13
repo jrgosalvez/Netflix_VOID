@@ -251,6 +251,12 @@ Output: `./outputs/lime.mp4` — Side-by-side comparison: `./outputs/lime_tuple.
 
 > **ZGX Nano tip:** Add `--config.system.gpu_memory_mode=model_full_load` to use the full 128 GB unified memory for best performance.
 
+> **Before starting inference — clear GPU memory buffers:** If you have run other processes or the pipeline since your last session, clear cached GPU memory first to avoid fragmentation or out-of-memory errors during the ~6 minute inference run:
+> ```bash
+> python -c "import torch; torch.cuda.empty_cache(); torch.cuda.synchronize(); print('GPU memory cleared')"
+> ```
+> Check current GPU memory usage with `nvidia-smi` before and after to confirm.
+
 ---
 
 ## Run on a Custom Video
@@ -290,11 +296,30 @@ Example `prompt.json`:
 
 ---
 
-### Step 2 — Step 0: Select points (GUI) and generate mask config
+### Step 2 — Select points (GUI) and generate mask config
 
-Before running the pipeline, use the point selector GUI to mark the object to remove across video frames. The GUI saves `mask_config_points.json` to `VLM-MASK-REASONER/` — you then copy it into your video folder.
+Before running the pipeline, create a `mask_config_points.json` directly in your project folder (`sample/my-video/`). This keeps all inputs and outputs — masks, metadata, and analysis — self-contained in the project folder rather than scattered across `VLM-MASK-REASONER/`.
 
-**Launch the GUI:**
+**Create `mask_config_points.json` in your project folder:**
+
+```bash
+cat > sample/my-video/mask_config_points.json << 'EOF'
+{
+  "videos": [
+    {
+      "video_path": "sample/my-video/input_video.mp4",
+      "output_dir": "sample/my-video",
+      "instruction": "remove the object from the scene",
+      "points": {}
+    }
+  ]
+}
+EOF
+```
+
+> Set `instruction` to describe what to remove (e.g. `"remove the sideline referee with the flag"`). The `points` field will be populated by the GUI in the next step. Both `video_path` and `output_dir` must point to your project folder — all pipeline outputs (`black_mask.mp4`, `grey_mask.mp4`, `quadmask_0.mp4`, `vlm_analysis.json`) will be written there.
+
+**Launch the point selector GUI:**
 
 ```bash
 export DISPLAY=:1   # if running over SSH via noVNC
@@ -303,38 +328,35 @@ python VLM-MASK-REASONER/point_selector_gui.py
 
 > For GUI access over SSH, see [TROUBLESHOOTING.md → VNC Browser GUI](TROUBLESHOOTING.md#browser-based-gui-via-novnc-recommended-for-ssh-users).
 
-In the GUI: load your video, click points on the object across multiple frames, add a removal instruction, then save.
+In the GUI: load `sample/my-video/input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save** — the GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
 
-**Copy the saved config into your video folder and update paths:**
+After saving, verify the config looks correct:
 
 ```bash
-cp VLM-MASK-REASONER/mask_config_points.json sample/my-video/mask_config_points.json
+cat sample/my-video/mask_config_points.json
 ```
 
-Open `sample/my-video/mask_config_points.json` and confirm the paths match your folder:
-
-```json
-{
-  "videos": [
-    {
-      "video_path": "sample/my-video/input_video.mp4",
-      "output_dir": "sample/my-video",
-      "instruction": "remove the object from the scene",
-      "points": {
-        "0":  {"positive": [[x, y], [x, y]], "negative": [], "box": [x1, y1, x2, y2]},
-        "10": {"positive": [[x, y], [x, y]], "negative": [], "box": [x1, y1, x2, y2]}
-      }
-    }
-  ]
-}
-```
-
-> Update `video_path` and `output_dir` to match your folder name if different from `my-video`. Update `instruction` to describe what to remove.
+Confirm `video_path`, `output_dir`, and `instruction` are set correctly before continuing.
 
 **Run the full mask pipeline:**
 
 ```bash
 bash VLM-MASK-REASONER/run_pipeline.sh /void-model/sample/my-video/mask_config_points.json
+```
+
+> **Note:** Update the `mask_config_points.json` file path to match your current working directory. If you are running from inside `void-model/`, use `sample/my-video/mask_config_points.json`. If running from the parent directory (`NetflixVOID/`), use `void-model/sample/my-video/mask_config_points.json`. Run `pwd` to confirm your current location before executing.
+
+All pipeline outputs will be written to `sample/my-video/`:
+
+```
+sample/my-video/
+├── input_video.mp4
+├── mask_config_points.json
+├── prompt.json
+├── black_mask.mp4         # Stage 1 — SAM2 segmentation
+├── vlm_analysis.json      # Stage 2 — Gemini VLM analysis
+├── grey_mask.mp4          # Stage 3 — affected region mask
+└── quadmask_0.mp4         # Stage 4 — final combined mask (used by inference)
 ```
 
 ### Step 3 — Run inference
