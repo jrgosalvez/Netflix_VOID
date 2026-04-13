@@ -6,7 +6,7 @@
 [![Paper](https://img.shields.io/badge/arXiv-2604.02296-red)](https://arxiv.org/abs/2604.02296)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/netflix/void-model/blob/main/LICENSE)
 
-> <small>**Credit:** This guide is based on the official Netflix VOID model repository [github.com/Netflix/void-model](https://github.com/Netflix/void-model) for use with ZGX Nano companion GPU. </small>
+<small>**Credit:** This guide is based on the official Netflix VOID model repository [github.com/Netflix/void-model](https://github.com/Netflix/void-model) for use with ZGX Nano companion GPU. </small>
 
 ---
 
@@ -60,9 +60,9 @@ python3 --version
 
 ---
 
-## Setup
+# Setup
 
-### 1. ZGX Nano System Dependencies
+## 1. ZGX Nano System Dependencies
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -74,7 +74,7 @@ sudo apt install -y \
 git lfs install
 ```
 
-### 2. Create and Activate Virtual Environment on ZGX Nano
+## 2. Create and Activate Virtual Environment on ZGX Nano
 
 ```bash
 python3 -m venv ~/void-env
@@ -84,14 +84,14 @@ pip install --upgrade pip setuptools wheel
 
 > Add `source ~/void-env/bin/activate` to `~/.bashrc` to auto-activate on login.
 
-### 3. Clone VOID Repository to Nano
+## 3. Clone VOID Repository to Nano
 
 ```bash
 git clone https://github.com/netflix/void-model.git
 cd void-model
 ```
 
-### 4. Install PyTorch (CUDA 13.0, GB10-specific)
+## 4. Install PyTorch (CUDA 13.0, GB10-specific)
 
 > The standard `pip install torch` installs a CPU-only build on aarch64. Use `uv` with exact version pinning to get the verified CUDA 13.0 build. See [TROUBLESHOOTING.md → PyTorch CUDA](TROUBLESHOOTING.md#pytorch--cuda-130-installation) for full details.
 
@@ -116,7 +116,7 @@ python -c "import torch; print(torch.__version__); print('CUDA:', torch.cuda.is_
 
 Expected: `2.11.0+cu130 / CUDA: True / GPU: NVIDIA GB10`
 
-### 5. Install Python Dependencies for VOID
+## 5. Install Python Dependencies for VOID
 
 ```bash
 pip install -r requirements.txt
@@ -125,7 +125,7 @@ pip install google-generativeai openai opencv-python-headless Pillow requests
 
 > If `decord` fails to install, it must be built from source. See [TROUBLESHOOTING.md → Building decord](TROUBLESHOOTING.md#decord--manual-build-from-source).
 
-### 6. Install SAM2
+## 6. Install SAM2
 
 ```bash
 cd ~
@@ -141,7 +141,7 @@ wget https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.p
     -O ../sam2_hiera_large.pt
 ```
 
-### 7. Authenticate with Hugging Face
+## 7. Authenticate with Hugging Face
 
 ```bash
 pip install huggingface_hub
@@ -163,7 +163,7 @@ For each: visit the link → click **Agree and access repository** → submit th
 
 > See [TROUBLESHOOTING.md → Gated Model Access](TROUBLESHOOTING.md#gated-model-access--403-forbidden) for details on verifying access and re-running after approval.
 
-### 8. Download Models
+## 8. Download Models
 
 ```bash
 cd ~/void-model
@@ -176,7 +176,7 @@ huggingface-cli download alibaba-pai/CogVideoX-Fun-V1.5-5b-InP \
 huggingface-cli download netflix/void-model --local-dir .
 ```
 
-### 9. Set Gemini API Key
+## 9. Set Gemini API Key
 
 Required for the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default. **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
 
@@ -257,11 +257,11 @@ Output: `./outputs/lime.mp4`. Side-by-side comparison: `./outputs/lime_tuple.mp4
 
 ---
 
-## Run on a Custom Video
+# Run on a Custom Video
 
-### 1. Set up your video folder
+## 1. Set up your video folder
 
-1a. Create a new folder inside `sample/` named after your project and add the required files:
+### 1a. Create a new folder inside `sample/` named after your project and add the required files:
 
 ```bash
 mkdir -p ~/void-model/sample/my-video
@@ -278,7 +278,7 @@ sample/
     └── prompt.json              # background description after removal
 ```
 
-1b. Create `prompt.json`. edit the description to match **what the scene should look like** after the object is removed:
+### 1b. Create `prompt.json`. edit the description to match **what the scene should look like** after the object is removed:
 
 ```bash
 echo '{"bg": "description of scene after object is removed"}' \
@@ -294,7 +294,7 @@ Example `prompt.json`:
 
 ---
 
-### 2. Select points (GUI) and generate mask config
+## 2. Select points (GUI) and generate mask config
 
 Before running the pipeline, create a `mask_config.json` directly in your project folder (`sample/my-video/`). Use it to load into the GUI to create points and save points. 
 
@@ -315,7 +315,7 @@ Before running the pipeline, create a `mask_config.json` directly in your projec
 
 > Set `instruction` to describe what to remove (e.g. `"remove the sideline referee with the flag"`). The `points` field will be populated by the GUI automatically after you select points by frame(s) and save as `mask_config_points.json`. Both `video_path` and `output_dir` will point to your project folder as well as all pipeline outputs (`black_mask.mp4`, `grey_mask.mp4`, `quadmask_0.mp4`, `vlm_analysis.json`). 
 
-**2a. Launch the point selector GUI:**
+### 2a. Launch the point selector GUI:
 
 ```bash
 export DISPLAY=:1   # if running over SSH via noVNC
@@ -324,7 +324,9 @@ python VLM-MASK-REASONER/point_selector_gui.py
 
 > For GUI access over SSH, see [TROUBLESHOOTING.md → VNC Browser GUI](TROUBLESHOOTING.md#browser-based-gui-via-novnc-recommended-for-ssh-users).
 
-**2b. In the GUI:** load `sample/my-video/mask_config.json` with will load your `input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save**. The GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
+### 2b. In the GUI: 
+
+load `sample/my-video/mask_config.json` with will load your `input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save**. The GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
 
 After saving, verify the config looks correct:
 
@@ -334,7 +336,7 @@ cat sample/my-video/mask_config_points.json
 
 Confirm `video_path`, `output_dir`, and `instruction` are set correctly before continuing.
 
-**2c. Run the full mask pipeline:**
+### 2c. Run the full mask pipeline:
 
 ```bash
 bash VLM-MASK-REASONER/run_pipeline.sh /void-model/sample/my-video/mask_config_points.json
@@ -355,7 +357,7 @@ sample/my-video/
 └── quadmask_0.mp4         # Stage 4. final combined mask (used by inference)
 ```
 
-### 3. Run inference
+## 3. Run inference
 
 ```bash
 python inference/cogvideox_fun/predict_v2v.py \
