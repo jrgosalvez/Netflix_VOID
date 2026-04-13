@@ -1,14 +1,12 @@
-# VOID Model — HP ZGX Nano Setup Guide
+# Netflix VOID Model - HP ZGX Nano Setup Guide
 
-**Netflix VOID** (Video Object and Interaction Deletion) on the **HP ZGX Nano G1n**
+**Netflix VOID** (Video Object and Interaction Deletion) on the **HP ZGX Nano G1n** with **HP ZGX Toolkit VS Code Extension**
 
 [![Model](https://img.shields.io/badge/HuggingFace-netflix%2Fvoid--model-orange)](https://huggingface.co/netflix/void-model)
 [![Paper](https://img.shields.io/badge/arXiv-2604.02296-red)](https://arxiv.org/abs/2604.02296)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/netflix/void-model/blob/main/LICENSE)
 
-> **Credit:** This guide is based on the official Netflix VOID model repository.  
-> Source code, model weights, and original documentation: [github.com/Netflix/void-model](https://github.com/Netflix/void-model)  
-> All credit for the VOID model, architecture, and pipeline belongs to the authors at Netflix and INSAIT.
+> **Credit:** This guide is based on the official Netflix VOID model repository [github.com/Netflix/void-model](https://github.com/Netflix/void-model) for use with ZGX Nano companion GPU. 
 
 ---
 
@@ -16,7 +14,7 @@
 
 | Before | After |
 |:------:|:-----:|
-| ![Before — input_video](input_video.gif) | ![After — VOID output](output_video.gif) |
+| ![Before. input_video](input_video.gif) | ![After. VOID output](output_video.gif) |
 | `input_video.mp4` | `output.mp4` |
 
 ---
@@ -43,7 +41,7 @@ This guide was written for Media and Entertainment video content creators lookin
 
 ## What VOID Does
 
-VOID removes objects from videos along with all physical interactions they induce — not just shadows and reflections, but effects like objects falling when a person is removed. It is built on CogVideoX and fine-tuned for video inpainting with interaction-aware quadmask conditioning.
+VOID removes objects from videos along with all physical interactions they induce. not just shadows and reflections, but effects like objects falling when a person is removed. It is built on CogVideoX and fine-tuned for video inpainting with interaction-aware quadmask conditioning.
 
 ---
 
@@ -64,7 +62,7 @@ python3 --version
 
 ## Setup
 
-### 1 — System Dependencies
+### 1. ZGX Nano System Dependencies
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -76,7 +74,7 @@ sudo apt install -y \
 git lfs install
 ```
 
-### 2 — Create Virtual Environment
+### 2. Create and Activate Virtual Environment on ZGX Nano
 
 ```bash
 python3 -m venv ~/void-env
@@ -86,14 +84,14 @@ pip install --upgrade pip setuptools wheel
 
 > Add `source ~/void-env/bin/activate` to `~/.bashrc` to auto-activate on login.
 
-### 3 — Clone VOID Repository
+### 3. Clone VOID Repository to Nano
 
 ```bash
 git clone https://github.com/netflix/void-model.git
 cd void-model
 ```
 
-### 4 — Install PyTorch (CUDA 13.0, GB10-specific)
+### 4. Install PyTorch (CUDA 13.0, GB10-specific)
 
 > The standard `pip install torch` installs a CPU-only build on aarch64. Use `uv` with exact version pinning to get the verified CUDA 13.0 build. See [TROUBLESHOOTING.md → PyTorch CUDA](TROUBLESHOOTING.md#pytorch--cuda-130-installation) for full details.
 
@@ -118,7 +116,7 @@ python -c "import torch; print(torch.__version__); print('CUDA:', torch.cuda.is_
 
 Expected: `2.11.0+cu130 / CUDA: True / GPU: NVIDIA GB10`
 
-### 5 — Install Python Dependencies
+### 5. Install Python Dependencies for VOID
 
 ```bash
 pip install -r requirements.txt
@@ -127,7 +125,7 @@ pip install google-generativeai openai opencv-python-headless Pillow requests
 
 > If `decord` fails to install, it must be built from source. See [TROUBLESHOOTING.md → Building decord](TROUBLESHOOTING.md#decord--manual-build-from-source).
 
-### 6 — Install SAM2
+### 6. Install SAM2
 
 ```bash
 cd ~
@@ -136,14 +134,14 @@ cd sam2 && pip install -e .
 cd ~/void-model
 ```
 
-Download the SAM2 checkpoint one level above `void-model/`:
+**NOTE**: Download the SAM2 checkpoint one level above `void-model/`:
 
 ```bash
 wget https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt \
     -O ../sam2_hiera_large.pt
 ```
 
-### 7 — Authenticate with Hugging Face
+### 7. Authenticate with Hugging Face
 
 ```bash
 pip install huggingface_hub
@@ -152,9 +150,9 @@ hf auth login
 
 > Generate a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens). See [TROUBLESHOOTING.md → HF Token](TROUBLESHOOTING.md#hugging-face-authentication) for persistence.
 
-### 7a — Request Access to Gated Models
+### 7a. Request Access to Gated Models
 
-Two models used in this pipeline require manual access approval on Hugging Face before they can be downloaded. Request access **before** running the pipeline — approval can take minutes to hours.
+Two models used in this pipeline require manual access approval on Hugging Face before they can be downloaded. Request access **before** running the pipeline. approval can take minutes to hours.
 
 | Model | URL | Required for |
 |-------|-----|-------------|
@@ -165,7 +163,7 @@ For each: visit the link → click **Agree and access repository** → submit th
 
 > See [TROUBLESHOOTING.md → Gated Model Access](TROUBLESHOOTING.md#gated-model-access--403-forbidden) for details on verifying access and re-running after approval.
 
-### 8 — Download Models
+### 8. Download Models
 
 ```bash
 cd ~/void-model
@@ -178,12 +176,12 @@ huggingface-cli download alibaba-pai/CogVideoX-Fun-V1.5-5b-InP \
 huggingface-cli download netflix/void-model --local-dir .
 ```
 
-### 9 — Set Gemini API Key
+### 9. Set Gemini API Key
 
-Required for the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default — **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
+Required for the VLM-MASK-REASONER pipeline (Stage 2). Stage 2 uses `gemini-3.1-pro` by default. **this model requires a paid Google AI Studio plan**. The free tier returns a `429` error immediately.
 
 - Enable billing at [aistudio.google.com](https://aistudio.google.com), or
-- Swap the model for a free alternative — see [TROUBLESHOOTING.md → Gemini Model Options](TROUBLESHOOTING.md#gemini-api--model-options)
+- Swap the model for a free alternative. see [TROUBLESHOOTING.md → Gemini Model Options](TROUBLESHOOTING.md#gemini-api--model-options)
 
 ```bash
 export GEMINI_API_KEY=your_key_here
@@ -233,7 +231,7 @@ NetflixVOID/
 
 ---
 
-## Run Inference — Sample Video
+## Run Inference. Sample Video
 
 ```bash
 cd ~/void-model
@@ -247,11 +245,11 @@ python inference/cogvideox_fun/predict_v2v.py \
     --config.video_model.transformer_path="./void_pass1.safetensors"
 ```
 
-Output: `./outputs/lime.mp4` — Side-by-side comparison: `./outputs/lime_tuple.mp4`
+Output: `./outputs/lime.mp4`. Side-by-side comparison: `./outputs/lime_tuple.mp4`
 
 > **ZGX Nano tip:** Add `--config.system.gpu_memory_mode=model_full_load` to use the full 128 GB unified memory for best performance.
 
-> **Before starting inference — clear GPU memory buffers:** If you have run other processes or the pipeline since your last session, clear cached GPU memory first to avoid fragmentation or out-of-memory errors during the ~6 minute inference run:
+> **Before starting inference. clear GPU memory buffers:** If you have run other processes or the pipeline since your last session, clear cached GPU memory first to avoid fragmentation or out-of-memory errors during the ~6 minute inference run:
 > ```bash
 > python -c "import torch; torch.cuda.empty_cache(); torch.cuda.synchronize(); print('GPU memory cleared')"
 > ```
@@ -261,26 +259,26 @@ Output: `./outputs/lime.mp4` — Side-by-side comparison: `./outputs/lime_tuple.
 
 ## Run on a Custom Video
 
-### Step 1 — Set up your video folder
+### 1. Set up your video folder
 
-Create a new folder inside `sample/` named after your project and add the required files:
+1a. Create a new folder inside `sample/` named after your project and add the required files:
 
 ```bash
 mkdir -p ~/void-model/sample/my-video
 cp /path/to/your/video.mp4 ~/void-model/sample/my-video/input_video.mp4
 ```
 
-Your folder must contain these three files before running the pipeline:
+Your folder must contain these three files before running the pipeline, be sure to rename files to match:
 
 ```
 sample/
 └── my-video/
     ├── input_video.mp4          # your source video
-    ├── mask_config_points.json  # point config saved by the GUI (see Step 2)
+    ├── mask_config.json         # config you will use to load yoru video into the GUI (see GUI in step 2 below)
     └── prompt.json              # background description after removal
 ```
 
-Create `prompt.json` — edit the description to match what the scene should look like after the object is removed:
+1b. Create `prompt.json`. edit the description to match **what the scene should look like** after the object is removed:
 
 ```bash
 echo '{"bg": "description of scene after object is removed"}' \
@@ -292,18 +290,17 @@ Example `prompt.json`:
 {"bg": "An empty football sideline with grass and crowd in background."}
 ```
 
-> Update both `mask_config_points.json` and `prompt.json` to match your folder name and file paths before running the pipeline. Path references inside `mask_config_points.json` must point to `sample/my-video/input_video.mp4` and `output_dir` must be `sample/my-video`.
+> Update both `mask_config.json` and `prompt.json` to match your folder name and file paths before running the pipeline. Path references inside `mask_config.json` should point to `sample/my-video/input_video.mp4` and `output_dir` must be `sample/my-video`.
 
 ---
 
-### Step 2 — Select points (GUI) and generate mask config
+### 2. Select points (GUI) and generate mask config
 
-Before running the pipeline, create a `mask_config_points.json` directly in your project folder (`sample/my-video/`). This keeps all inputs and outputs — masks, metadata, and analysis — self-contained in the project folder rather than scattered across `VLM-MASK-REASONER/`.
+Before running the pipeline, create a `mask_config.json` directly in your project folder (`sample/my-video/`). Use it to load into the GUI to create points and save points. 
 
-**Create `mask_config_points.json` in your project folder:**
+**Saving points from the GUI to your project folder will look similar to:**
 
-```bash
-cat > sample/my-video/mask_config_points.json << 'EOF'
+```
 {
   "videos": [
     {
@@ -314,12 +311,11 @@ cat > sample/my-video/mask_config_points.json << 'EOF'
     }
   ]
 }
-EOF
 ```
 
-> Set `instruction` to describe what to remove (e.g. `"remove the sideline referee with the flag"`). The `points` field will be populated by the GUI in the next step. Both `video_path` and `output_dir` must point to your project folder — all pipeline outputs (`black_mask.mp4`, `grey_mask.mp4`, `quadmask_0.mp4`, `vlm_analysis.json`) will be written there.
+> Set `instruction` to describe what to remove (e.g. `"remove the sideline referee with the flag"`). The `points` field will be populated by the GUI automatically after you select points by frame(s) and save as `mask_config_points.json`. Both `video_path` and `output_dir` will point to your project folder as well as all pipeline outputs (`black_mask.mp4`, `grey_mask.mp4`, `quadmask_0.mp4`, `vlm_analysis.json`). 
 
-**Launch the point selector GUI:**
+**2a. Launch the point selector GUI:**
 
 ```bash
 export DISPLAY=:1   # if running over SSH via noVNC
@@ -328,7 +324,7 @@ python VLM-MASK-REASONER/point_selector_gui.py
 
 > For GUI access over SSH, see [TROUBLESHOOTING.md → VNC Browser GUI](TROUBLESHOOTING.md#browser-based-gui-via-novnc-recommended-for-ssh-users).
 
-In the GUI: load `sample/my-video/mask_config_points.json` with will load your `input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save** — the GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
+**2b. In the GUI:** load `sample/my-video/mask_config.json` with will load your `input_video.mp4`, click points on the object across at least 10 frames, set the removal instruction, then **Save**. The GUI will write the updated config with points back to `sample/my-video/mask_config_points.json`.
 
 After saving, verify the config looks correct:
 
@@ -338,7 +334,7 @@ cat sample/my-video/mask_config_points.json
 
 Confirm `video_path`, `output_dir`, and `instruction` are set correctly before continuing.
 
-**Run the full mask pipeline:**
+**2c. Run the full mask pipeline:**
 
 ```bash
 bash VLM-MASK-REASONER/run_pipeline.sh /void-model/sample/my-video/mask_config_points.json
@@ -353,13 +349,13 @@ sample/my-video/
 ├── input_video.mp4
 ├── mask_config_points.json
 ├── prompt.json
-├── black_mask.mp4         # Stage 1 — SAM2 segmentation
-├── vlm_analysis.json      # Stage 2 — Gemini VLM analysis
-├── grey_mask.mp4          # Stage 3 — affected region mask
-└── quadmask_0.mp4         # Stage 4 — final combined mask (used by inference)
+├── black_mask.mp4         # Stage 1. SAM2 segmentation
+├── vlm_analysis.json      # Stage 2. Gemini VLM analysis
+├── grey_mask.mp4          # Stage 3. affected region mask
+└── quadmask_0.mp4         # Stage 4. final combined mask (used by inference)
 ```
 
-### Step 3 — Run inference
+### 3. Run inference
 
 ```bash
 python inference/cogvideox_fun/predict_v2v.py \
@@ -387,7 +383,7 @@ python inference/cogvideox_fun/predict_v2v.py \
 
 ## Troubleshooting
 
-For detailed step-by-step resolution of all known issues — including CUDA errors, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors — see:
+For detailed step-by-resolution of all known issues. including CUDA errors, decord build, PyTorch wheel selection, Gemini quota, VNC GUI setup, driver recovery after crash, SAM3 BPE vocabulary, and pipeline errors. see:
 
 **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
@@ -401,4 +397,3 @@ For detailed step-by-step resolution of all known issues — including CUDA erro
 - Paper: [arxiv.org/abs/2604.02296](https://arxiv.org/abs/2604.02296)
 - HP ZGX Nano: [hp.com/us-en/workstations/zgx-nano-ai-station](https://www.hp.com/us-en/workstations/zgx-nano-ai-station.html)
 - NVIDIA DGX Spark Build: [build.nvidia.com/spark](https://build.nvidia.com/spark)
-- License: Apache 2.0
